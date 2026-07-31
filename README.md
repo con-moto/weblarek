@@ -81,8 +81,8 @@ Presenter - презентер содержит основную логику п
 `options: RequestInit` - объект с заголовками, которые будут использованы для запросов.
 
 Методы:  
-`get(uri: string): Promise<object>` - выполняет GET запрос на переданный в параметрах ендпоинт и возвращает промис с объектом, которым ответил сервер  
-`post(uri: string, data: object, method: ApiPostMethods = 'POST'): Promise<object>` - принимает объект с данными, которые будут переданы в JSON в теле запроса, и отправляет эти данные на ендпоинт переданный как параметр при вызове метода. По умолчанию выполняется `POST` запрос, но метод запроса может быть переопределен заданием третьего параметра при вызове.  
+`get(uri: string): Promise<object>` - выполняет GET запрос на переданный в параметрах эндпоинт и возвращает промис с объектом, которым ответил сервер  
+`post(uri: string, data: object, method: ApiPostMethods = 'POST'): Promise<object>` - принимает объект с данными, которые будут переданы в JSON в теле запроса, и отправляет эти данные на эндпоинт переданный как параметр при вызове метода. По умолчанию выполняется `POST` запрос, но метод запроса может быть переопределен заданием третьего параметра при вызове.  
 `handleResponse(response: Response): Promise<object>` - защищенный метод проверяющий ответ сервера на корректность и возвращающий объект с данными полученный от сервера или отклоненный промис, в случае некорректных данных.
 
 #### Класс EventEmitter
@@ -112,7 +112,7 @@ interface IProduct {
 }
 
 interface IBuyer {
-  payment: TPayment;
+  payment: TPayment | null;
   email: string;
   phone: string;
   address: string;
@@ -159,7 +159,7 @@ interface IBuyer {
 Конструктор:
 `constructor()` — не принимает параметров.
 Поля класса:
-`payment: TPayment` — выбранный способ оплаты.
+`payment: TPayment | null` — выбранный способ оплаты.
 `address: string` — адрес доставки.
 `email: string` — email покупателя.
 `phone: string` — телефон покупателя.
@@ -167,7 +167,7 @@ interface IBuyer {
 `setBuyerData(data: Partial<IBuyer>): void` — сохраняет данные покупателя в модель, не затирая уже заполненные поля.
 `getBuyerData(): IBuyer` — возвращает все данные покупателя.
 `clearBuyerData(): void` — очищает сохранённые данные.
-`validate(): Partial<Record<keyof IBuyer, string>>` —  проверяет корректность данных покупателя по правилам из функциональных требований (поле считается валидным, если оно не пустое) и возвращает объект с текстами ошибок по полям. Если поле заполнено корректно, свойство для этого поля в объекте не создаётся. Например, метод может вернуть объект:
+`validate(): IBuyerValidationErrors` —  проверяет корректность данных покупателя по правилам из функциональных требований (поле считается валидным, если оно не пустое) и возвращает объект с текстами ошибок по полям. Если поле заполнено корректно, свойство для этого поля в объекте не создаётся. Например, метод может вернуть объект:
 ```ts
 {
   payment: 'Не выбран вид оплаты',
@@ -187,3 +187,187 @@ interface IBuyer {
 Методы класса:
 `getProducts(): Promise<IProductsResponse>` — выполняет `GET` запрос на эндпоинт `/product/` и возвращает промис с объектом, содержащим массив товаров, полученный от сервера.  
 `createOrder(order: IOrderRequest): Promise<IOrderResponse>` — выполняет `POST` запрос на эндпоинт `/order/`, отправляет данные заказа (товары и данные покупателя) и возвращает промис с объектом, подтверждающим покупку на определённую сумму.
+
+### Слой представления
+Отвечает за отображение интерфейса приложения и уведомление презентера о действиях пользователя. Компоненты этого слоя не содержат бизнес-логику и не изменяют данные моделей напрямую.
+
+Базовый класс `Component<T>`
+Является базовым классом для всех компонентов интерфейса.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает корневой DOM-элемент компонента.
+Поля класса:
+`container: HTMLElement` — корневой DOM-элемент компонента.
+Методы класса:
+`render(data?: Partial<T>): HTMLElement` — возвращает DOM-элемент компонента. Может использоваться для обновления данных компонента.
+`getElement(): HTMLElement`— возвращает корневой DOM-элемент компонента.
+`setImage(element: HTMLImageElement, src: string, alt?: string): void` — вспомогательный метод для установки изображения и альтернативного текста.
+
+Класс `CatalogView`
+Отвечает за отображение каталога товаров на главной странице.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает элемент, внутри которого отображается каталог.
+Поля класса:
+`container: HTMLElement` — контейнер каталога.
+Методы класса:
+`render(items: HTMLElement[]): HTMLElement` — отображает список карточек товаров.
+
+Класс `ProductCard`
+Отвечает за отображение карточки товара в каталоге.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает шаблон карточки каталога.
+Поля класса:
+`id: string` — id товара.
+`categoryElement: HTMLElement` — элемент категории.
+`titleElement: HTMLElement` — элемент названия.
+`imageElement: HTMLImageElement` — изображение товара.
+`priceElement: HTMLElement` — элемент цены.
+`clickHandler: ((id: string) => void) | null` — обработчик выбора карточки.
+Методы класса:
+`setProduct(product: IProduct): void` — заполняет карточку данными товара.
+`setClickHandler(handler: (id: string) => void): void` — задаёт обработчик выбора.
+`renderCard(product: IProduct, handler: (id: string) => void): HTMLElement` — отображает карточку товара и назначает обработчик.
+
+Класс `ProductCardInModal`
+Отвечает за отображение детальной карточки товара в модальном окне.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает шаблон детальной карточки.
+Поля класса:
+`id: string` — id товара.
+`categoryElement: HTMLElement` — элемент категории.
+`titleElement: HTMLElement` — элемент названия.
+`imageElement: HTMLImageElement` — изображение товара.
+`textElement: HTMLElement` — описание товара.
+`priceElement: HTMLElement` — цена товара.
+`buttonElement: HTMLButtonElement` — кнопка действия.
+`clickHandler: ((id: string) => void) | null` — обработчик нажатия кнопки.
+Методы класса:
+`setProduct(product: IProduct, inBasket?: boolean): void` — заполняет карточку товара и меняет текст кнопки в зависимости от состояния товара.
+`setClickHandler(handler: (id: string) => void): void` — задаёт обработчик кнопки.
+`renderCard(product: IProduct, handler: (id: string) => void, inBasket?: boolean): HTMLElement` — отображает карточку в модальном окне.
+
+Класс `ProductCardInBasket`
+Отвечает за отображение товара в корзине.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает шаблон элемента корзины.
+Поля класса:
+`id: string` — id товара.
+`indexElement: HTMLElement` — номер товара в списке.
+`titleElement: HTMLElement` — название товара.
+`priceElement: HTMLElement` — цена товара.
+`deleteButton: HTMLButtonElement` — кнопка удаления.
+`removeHandler: ((id: string) => void) | null` — обработчик удаления товара.
+Методы класса:
+`setProduct(product: IProduct, index: number): void` — заполняет товар в корзине.
+`setRemoveHandler(handler: (id: string) => void): void` — задаёт обработчик удаления.
+`renderItem(product: IProduct, index: number, handler: (id: string) => void): HTMLElement` — отображает товар в корзине.
+
+Класс `BasketIcon`
+Отвечает за отображение счётчика товаров в иконке корзины.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает кнопку корзины.
+Поля класса:
+`counterElement: HTMLElement` — элемент счётчика.
+Методы класса:
+`setCount(count: number): void` — устанавливает количество товаров.
+`render(count?: number): HTMLElement` — обновляет и возвращает DOM-элемент иконки корзины.
+
+Класс `BasketView`
+Отвечает за отображение корзины в модальном окне.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает контейнер корзины.
+Поля класса:
+`listElement: HTMLElement` — список товаров.
+`totalElement: HTMLElement` — общая стоимость корзины.
+`orderButton: HTMLButtonElement` — кнопка оформления заказа.
+Методы класса:
+`setItems(items: HTMLElement[]): void` — отображает список товаров, а при пустой корзине показывает сообщение «Корзина пуста».
+`setTotal(total: number): void` — отображает общую стоимость товаров.
+`setDisabled(disabled: boolean): void` — включает или отключает кнопку оформления.
+`setOrderHandler(handler: () => void): void` — задаёт обработчик кнопки оформления.
+`render(data: { items: HTMLElement[]; total: number; disabled: boolean }): HTMLElement` — отображает корзину.
+
+Класс `Form<T>`
+Базовый класс для форм приложения.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает DOM-элемент формы.
+Поля класса:
+`submitButton: HTMLButtonElement` — кнопка отправки формы.
+`errorsElement: HTMLElement` — блок сообщений об ошибках.
+Методы класса:
+`setDisabled(disabled: boolean): void` — включает или отключает кнопку отправки.
+`setErrors(message: string): void` — отображает сообщение об ошибке.
+`clearErrors(): void` — очищает сообщение об ошибке.
+`render(): HTMLElement` — возвращает DOM-элемент формы.
+
+Класс `OrderForm`
+Отвечает за первый шаг оформления заказа: выбор способа оплаты и ввод адреса доставки.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает шаблон формы заказа.
+Поля класса:
+`paymentButtons: HTMLButtonElement[]` — кнопки выбора способа оплаты.
+`addressInput: HTMLInputElement` — поле адреса доставки.
+Методы класса:
+`setPayment(value: TPayment): void` — устанавливает выбранный способ оплаты.
+`setAddress(value: string): void` — заполняет поле адреса.
+`getData(): Pick<IBuyer, 'payment' | 'address'>` — возвращает данные первого шага.
+`isValid(): boolean` — проверяет заполненность оплаты и адреса.
+`render(): HTMLElement` — возвращает DOM-элемент формы.
+
+Класс `ContactsForm`
+Отвечает за второй шаг оформления заказа: ввод email и телефона покупателя.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает шаблон формы контактов.
+Поля класса:
+`emailInput: HTMLInputElement` — поле email.
+`phoneInput: HTMLInputElement` — поле телефона.
+Методы класса:
+`setEmail(value: string): void` — заполняет поле email.
+`setPhone(value: string): void` — заполняет поле телефона.
+`getData(): Pick<IBuyer, 'email' | 'phone'>` — возвращает данные второго шага.
+`isValid(): boolean` — проверяет заполненность email и телефона.
+`render(): HTMLElement` — возвращает DOM-элемент формы.
+
+Класс `Modal`
+Отвечает за отображение и управление модальным окном.
+Конструктор:
+`constructor(container: HTMLElement)` — принимает DOM-элемент модального окна.
+Поля класса:
+`content: HTMLElement` — область содержимого модального окна.
+`closeButton: HTMLButtonElement` — кнопка закрытия.
+Методы класса:
+`setContent(element: HTMLElement): void` — устанавливает содержимое модального окна.
+`open(): void` — открывает модальное окно.
+`close(): void` — закрывает модальное окно и очищает содержимое.
+`render(): HTMLElement` — возвращает DOM-элемент модального окна.
+
+### События приложения
+События моделей
+`catalog:change` — каталог товаров был загружен или обновлён.
+`catalog:selected` — выбран товар для просмотра.
+`basket:change` — изменилось содержимое корзины.
+`buyer:change` — изменились данные покупателя.
+
+### События представления
+`product:select` — пользователь выбрал карточку товара.
+`product:add` — пользователь нажал кнопку покупки товара.
+`product:remove` — пользователь нажал кнопку удаления товара из корзины.
+`basket:open` — пользователь открыл корзину.
+`order:open` — пользователь начал оформление заказа.
+`order:next` — пользователь перешёл ко второму шагу оформления.
+`order:submit` — пользователь отправил заказ.
+`form:change` — пользователь изменил данные формы.
+
+### Презентер
+Презентер реализован в файле `src/main.ts`. Он связывает модели и представления между собой, подписывается на события моделей и обрабатывает действия пользователя.
+Презентер отвечает за:
+- загрузку товаров с сервера;
+- отображение каталога товаров;
+- открытие модального окна с товаром;
+- добавление и удаление товаров из корзины;
+- отображение корзины и форм оформления;
+- отправку заказа на сервер;
+- очистку корзины и данных покупателя после успешной покупки.
+Презентер не хранит данные. Он только координирует работу между слоями:
+- при событии catalog:change строит карточки товаров и передаёт их в CatalogView;
+- при событии basket:change обновляет счётчик корзины и при необходимости пересобирает содержимое корзины;
+- при успешной отправке заказа очищает корзину, очищает данные покупателя и закрывает модальное окно.

@@ -6,7 +6,9 @@ export abstract class Component<T> {
         // Учитывайте что код в конструкторе исполняется ДО всех объявлений в дочернем классе
     }
 
+
     // Инструментарий для работы с DOM в дочерних компонентах
+
 
     // Установить изображение с альтернативным текстом
     protected setImage(element: HTMLImageElement, src: string, alt?: string) {
@@ -17,6 +19,11 @@ export abstract class Component<T> {
             }
         }
     }
+
+    public getElement(): HTMLElement {
+        return this.container;
+    }
+
 
     // Вернуть корневой DOM-элемент
     render(data?: Partial<T>): HTMLElement {

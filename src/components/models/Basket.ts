@@ -1,9 +1,12 @@
 import { IProduct } from '../../types';
+import { EventEmitter } from '../base/Events';
 
-export class Basket {
+export class Basket extends EventEmitter {
   private items: IProduct[] = [];
 
-  constructor() {}
+  constructor() {
+    super();
+  }
 
   public getItems(): IProduct[] {
     return this.items;
@@ -11,14 +14,17 @@ export class Basket {
 
   public addItem(item: IProduct): void {
     this.items.push(item);
+    this.emit('basket:change');
   }
 
   public removeItem(id: string): void {
     this.items = this.items.filter((item) => item.id !== id);
+    this.emit('basket:change');
   }
 
   public clearBasket(): void {
     this.items = [];
+    this.emit('basket:change');
   }
 
   public getTotal(): number {
