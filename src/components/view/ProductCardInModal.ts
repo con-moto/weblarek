@@ -1,63 +1,71 @@
-import { Component } from '../base/Component';
+import { Card } from './Card';
 import { IProduct } from '../../types';
-import { categoryMap, CDN_URL } from '../../utils/constants';
+import { categoryMap } from '../../utils/constants';
 
-export class ProductCardInModal extends Component<IProduct> {
-    private id: string = '';
+export class ProductCardInModal extends Card {
     private categoryElement: HTMLElement;
-    private titleElement: HTMLElement;
     private imageElement: HTMLImageElement;
     private textElement: HTMLElement;
-    private priceElement: HTMLElement;
     private buttonElement: HTMLButtonElement;
-    private clickHandler: ((id: string) => void) | null = null;
+    private clickHandler: (() => void) | null = null;
 
     constructor(container: HTMLElement) {
         super(container);
-        this.categoryElement = this.container.querySelector('.card__category') as HTMLElement;
-        this.titleElement = this.container.querySelector('.card__title') as HTMLElement;
-        this.imageElement = this.container.querySelector('.card__image') as HTMLImageElement;
-        this.textElement = this.container.querySelector('.card__text') as HTMLElement;
-        this.priceElement = this.container.querySelector('.card__price') as HTMLElement;
-        this.buttonElement = this.container.querySelector('.card__button') as HTMLButtonElement;
+
+        this.categoryElement = this.container.querySelector(
+            '.card__category'
+        ) as HTMLElement;
+
+        this.imageElement = this.container.querySelector(
+            '.card__image'
+        ) as HTMLImageElement;
+
+        this.textElement = this.container.querySelector(
+            '.card__text'
+        ) as HTMLElement;
+
+        this.buttonElement = this.container.querySelector(
+            '.card__button'
+        ) as HTMLButtonElement;
 
         this.buttonElement.addEventListener('click', () => {
-            if (this.clickHandler) {
-                this.clickHandler(this.id);
-            }
+            this.clickHandler?.();
         });
     }
 
-    public setProduct(product: IProduct, inBasket: boolean = false): void {
-        this.id = product.id;
-        this.titleElement.textContent = product.title;
+    public setProduct(
+        product: IProduct,
+        inBasket = false
+    ): void {
+        this.setTitle(product.title);
+        this.setPrice(product.price);
+
         this.categoryElement.textContent = product.category;
 
-        const modifier = categoryMap[product.category as keyof typeof categoryMap] ?? categoryMap['другое'];
-        this.categoryElement.className = `card__category ${modifier}`;
+        const modifier =
+            categoryMap[product.category as keyof typeof categoryMap] ??
+            categoryMap['другое'];
 
-        this.imageElement.src = `${CDN_URL}${product.image}`;
+        this.categoryElement.className =
+            `card__category ${modifier}`;
+
+        this.imageElement.src = product.image;
         this.imageElement.alt = product.title;
+
         this.textElement.textContent = product.description;
 
         if (product.price === null) {
-            this.priceElement.textContent = 'Недоступно';
             this.buttonElement.disabled = true;
             this.buttonElement.textContent = 'Недоступно';
         } else {
-            this.priceElement.textContent = `${product.price} синапсов`;
             this.buttonElement.disabled = false;
-            this.buttonElement.textContent = inBasket ? 'Удалить из корзины' : 'Купить';
+            this.buttonElement.textContent = inBasket
+                ? 'Удалить из корзины'
+                : 'Купить';
         }
     }
 
-    public setClickHandler(handler: (id: string) => void): void {
+    public setClickHandler(handler: () => void): void {
         this.clickHandler = handler;
-    }
-
-    public renderCard(product: IProduct, handler: (id: string) => void, inBasket: boolean = false): HTMLElement {
-        this.setProduct(product, inBasket);
-        this.setClickHandler(handler);
-        return this.container;
     }
 }

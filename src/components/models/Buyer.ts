@@ -1,31 +1,36 @@
-import { IBuyer, TPayment, IBuyerValidationErrors } from '../../types';
-import { EventEmitter } from '../base/Events';
+import {
+    IBuyer,
+    TPayment,
+    IBuyerValidationErrors,
+} from '../../types';
+import { IEvents } from '../base/Events';
 
-export class Buyer extends EventEmitter {
+export class Buyer {
     private payment: TPayment | null = null;
-    private address: string = '';
-    private email: string = '';
-    private phone: string = '';
+    private address = '';
+    private email = '';
+    private phone = '';
 
-    constructor() {
-        super();
-    }
+    constructor(private readonly events: IEvents) {}
 
     public setBuyerData(data: Partial<IBuyer>): void {
         if (data.payment !== undefined) {
             this.payment = data.payment;
         }
+
         if (data.address !== undefined) {
             this.address = data.address;
         }
+
         if (data.email !== undefined) {
             this.email = data.email;
         }
+
         if (data.phone !== undefined) {
             this.phone = data.phone;
         }
 
-        this.emit('buyer:change');
+        this.events.emit('buyer:change');
     }
 
     public getBuyerData(): IBuyer {
@@ -43,26 +48,37 @@ export class Buyer extends EventEmitter {
         this.email = '';
         this.phone = '';
 
-        this.emit('buyer:change');
+        this.events.emit('buyer:change');
     }
 
     public validate(): IBuyerValidationErrors {
         const errors: IBuyerValidationErrors = {};
 
+        const emailPattern =
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        const phonePattern =
+            /^\+7\s?\(?\d{3}\)?\s?\d{3}[-\s]?\d{2}[-\s]?\d{2}$/;
+
         if (!this.payment) {
-            errors.payment = 'Не выбран вид оплаты';
+            errors.payment = 'Не выбран способ оплаты';
         }
 
-        if (!this.address) {
+        if (!this.address.trim()) {
             errors.address = 'Не указан адрес доставки';
         }
 
-        if (!this.email) {
+        if (!this.email.trim()) {
             errors.email = 'Не указана почта';
+        } else if (!emailPattern.test(this.email.trim())) {
+            errors.email = 'Укажите корректный email';
         }
 
-        if (!this.phone) {
+        if (!this.phone.trim()) {
             errors.phone = 'Не указан телефон';
+        } else if (!phonePattern.test(this.phone.trim())) {
+            errors.phone =
+                'Укажите телефон в формате +7 (900) 123-45-67';
         }
 
         return errors;
